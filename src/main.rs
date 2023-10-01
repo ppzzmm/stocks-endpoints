@@ -19,7 +19,7 @@ const INTERNAL_SERVER_ERROR: &str = "HTTP/1.1 500 INTERNAL SERVER ERROR\r\n\r\n"
 fn main() {
     //start server and print port
     let listener = TcpListener::bind(format!("0.0.0.0:8080")).unwrap();
-    println!("Server started at port 8080 - PZM");
+    println!("Server started at port 8080");
 
     //handle the client
     for stream in listener.incoming() {
@@ -45,7 +45,7 @@ fn handle_client(mut stream: TcpStream) {
 
             let (status_line, content) = match &*request {
                 r if r.starts_with("POST /buy_stocks") => handle_post_request_to_buy_stocks(r),
-                r if r.starts_with("POST /sale_stocks") => handle_post_request_to_sale_stocks(r),
+                r if r.starts_with("POST /sell_stocks") => handle_post_request_to_sell_stocks(r),
                 _ => (NOT_FOUND.to_string(), "404 Not Found".to_string()),
             };
 
@@ -73,14 +73,14 @@ fn handle_post_request_to_buy_stocks(request: &str) -> (String, String) {
     }
 }
 
-fn handle_post_request_to_sale_stocks(request: &str) -> (String, String) {
+fn handle_post_request_to_sell_stocks(request: &str) -> (String, String) {
     match get_stock_request_body(&request) {
         Ok(buy_stock) => {
             let resul = common_utils::get_stock_from_nasdaq(buy_stock.symbol.to_string());
             if !resul.success {
                 return (INTERNAL_SERVER_ERROR.to_string(), resul.message.to_string());
             }
-            common_utils::send_message_to_consumer(buy_stock.symbol.to_string(), buy_stock.shares, "sale".to_string());
+            common_utils::send_message_to_consumer(buy_stock.symbol.to_string(), buy_stock.shares, "sell".to_string());
             let response = format!("Successfully purchased shares with the symbol: {}", buy_stock.symbol.to_string());
             (OK_RESPONSE.to_string(), response)
         }
